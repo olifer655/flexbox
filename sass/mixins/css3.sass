@@ -1,0 +1,221 @@
+/**
+ * CSS3 Mixins
+ *
+ * This is a set of mixins which helps CSSers adapt some CSS3 prefix
+ * and use the native support of current browsers.
+ *
+ * 1. Box-model, Visual
+ * 2. transform, transition ,animtaion and perspective
+ *
+ * Note: Consult flex.sass for flexbox's mixins
+ *
+ */
+
+
+
+
+/**
+ * Box-model and Visual
+ */
+
+// box-sizing setting
+=box-sizing($boxsizing)
+  -moz-box-sizing: $boxsizing
+  -webkit-box-sizing: $boxsizing
+  box-sizing: $boxsizing
+
+
+// box shadow
+=box-shadow($param)
+  -moz-box-shadow: $param
+  -webkit-box-shadow: $param
+  box-shadow: $param
+
+
+// opactity
+=opacity($opacity)
+  $opacityIE: $opacity * 100
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=$opacityIE) // IE 8 & 9
+  opacity: $opacity
+
+
+// user-select
+=user-select($mode: text)
+  -webkit-user-select: $mode
+  -moz-user-select: $mode
+  -ms-user-select: $mode
+  user-select: $mode
+
+
+// placeholder
+=placeholder($color)
+  &::-moz-placeholder
+    color: $color
+    opacity: 1
+  &:-moz-placeholder
+    color: $color
+  &:-ms-input-placeholder
+    color: $color
+  &::-webkit-input-placeholder
+    color: $color
+
+
+// background
+=background-size($size)
+  -webkit-background-size: $size
+  -moz-background-size: $size
+  background-size: $size
+
+=background-origin($mode: border-box)
+  $xmode: null
+  @if ($mode == border-box)
+    $xmode: border
+  @if ($mode == padding-box)
+    $xmode: padding
+  @if ($mode == content-box)
+    $xmode: content
+  -moz-background-origin: $xmode
+  -webkit-background-origin: $xmode
+  background-origin: $mode
+
+=background-clip($mode: border-box)
+  $xmode: null
+  @if ($mode == border-box)
+    $xmode: border
+  @if ($mode == padding-box)
+    $xmode: padding
+  @if ($mode == content-box)
+    $xmode: content
+  -moz-background-clip: $xmode
+  -webkit-background-clip: $xmode
+  background-clip: $mode
+
+=radial-gradient($arguments...)
+  background: -webkit-radial-gradient($arguments)
+  background: -moz-radial-gradient($arguments)
+  background: -ms-radial-gradient($arguments)
+  background: radial-gradient($arguments)
+
+=linear-gradient($arguments...)
+  @if (length($arguments) == 2)
+    $arguments: join(unquote("to bottom"), $arguments, comma)
+  $map: ("to top": bottom, "to bottom": top, "to left": right, "0deg": bottom, "90deg": left, "180deg": top, "270deg": right)
+  $iemap: ("to top": 0, "to right": 1, "to bottom": 0, "to left": 1, "0deg": 0, "90deg": 1, "180deg": 0, "270deg": 1)
+  $direction: inspect(nth($arguments, 1))
+  $colorlist: str-slice(inspect($arguments), str-length($direction) + 2)
+  $wkdirection: map-get($map, $direction)
+  $iedirection: map-get($iemap, $direction)
+  $startColor: null
+  $endColor: null
+  @if ($wkdirection == top)
+    $startColor: nth(nth($arguments, 2), 1)
+    $endColor: nth(nth($arguments, 3), 1)
+  @else if ($wkdirection == left)
+    $startColor: nth(nth($arguments, 2), 1)
+    $endColor: nth(nth($arguments, 3), 1)
+  @else if ($wkdirection == bottom)
+    $startColor: nth(nth($arguments, 3), 1)
+    $endColor: nth(nth($arguments, 2), 1)
+  @else if ($wkdirection == right)
+    $startColor: nth(nth($arguments, 3), 1)
+    $endColor: nth(nth($arguments, 2), 1)
+  background: -webkit-linear-gradient($wkdirection, $colorlist)
+  background: linear-gradient($arguments)
+  filter: unquote("progid:DXImageTransform.Microsoft.gradient(startcolorstr=#{$startColor}, endcolorstr=#{$endColor}, gradientType=#{$iedirection})")
+
+
+// backface visibility (hide the reversed element)
+=backface-visibility($value:visible)
+  -webkit-backface-visibility: $value
+  -moz-backface-visibility: $value
+  -ms-backface-visibility: $value
+  backface-visibility: $value
+
+
+
+
+/**
+ * tranform, transition, animation and perspective
+ */
+
+// compatible transition when the transition-property is transform
+@function prefix($property, $prefixes: (webkit moz o ms))
+  $vendor-prefixed-properties: transform background-clip background-size
+  $result: ()
+  @each $prefix in $prefixes
+    @if index($vendor-prefixed-properties, $property)
+      $property: -#{$prefix}-#{$property}
+    $result: append($result, $property)
+  @return $result
+
+@function trans-prefix($transition, $prefix: moz)
+  $prefixed: ()
+  @each $trans in $transition
+    $prop-name: nth($trans, 1)
+    $vendor-prop-name: prefix($prop-name, $prefix)
+    $prop-vals: nth($trans, 2)
+    $prefixed: append($prefixed, ($vendor-prop-name $prop-vals), comma)
+  @return $prefixed
+
+=transition($values...)
+  $transitions: ()
+  @each $declaration in $values
+    $prop: nth($declaration, 1)
+    $prop-opts: ()
+    $length: length($declaration)
+    @for $i from 2 through $length
+      $prop-opts: append($prop-opts, nth($declaration, $i))
+    $trans: ($prop, $prop-opts)
+    $transitions: append($transitions, $trans, comma)
+  -webkit-transition: trans-prefix($transitions, webkit)
+  transition: $values
+
+
+// compatible transform
+=transform($values)
+  -webkit-transform: $values
+  -moz-transform: $values
+  -ms-transform: $values
+  transform: $values
+
+=transform-origin($values: 50% 50% 0)
+  -webkit-transform-origin: $values
+  -moz-transform-origin: $values
+  -ms-transform-origin: $values
+  transform-origin: $values
+
+=transform-style($value: flat)
+  -webkit-transform-style: $value
+  -moz-transform-style: $value
+  transform-style: $value
+
+
+// compatible animation
+=keyframes($name)
+  @-moz-keyframes #{$name}
+    @content
+  @-webkit-keyframes #{$name}
+    @content
+  @keyframes #{$name}
+    @content
+
+=animation($values)
+  -webkit-animation: $values
+  -moz-animation: $values
+  animation: $values
+
+=animation-timing-function($values)
+  -webkit-animation-timing-function: $values
+  animation-timing-function: $values
+
+
+// compatible perspective (3D)
+=perspective($value: none)
+  -webkit-perspective: $value
+  -moz-perspective: $value
+  perspective: $value
+
+=perspective-origin($origin: 50% 50%)
+  -webkit-perspective-origin: $origin
+  -moz-perspective-origin: $origin
+  perspective-origin: $origin
